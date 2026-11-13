@@ -1,0 +1,85 @@
+---
+import { Clock, MapPin } from "@lucide/astro";
+import WhatsAppIcon from "./icons/WhatsAppIcon.astro";
+---
+
+<section class="py-5 bg-white" id="contact">
+  <div class="container py-lg-4">
+    <div class="text-center mx-auto mb-5" style="max-width: 640px;">
+      <span class="badge rounded-pill bg-success-subtle text-success-emphasis px-3 py-2 text-uppercase">
+        Kontak
+      </span>
+      <h2 class="fw-bold mt-3">Pesan Catering Sekarang</h2>
+      <p class="text-secondary mb-0">
+        Konsultasikan kebutuhan acara Anda, kami bantu tentukan menu terbaik.
+      </p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-4">
+        <article class="card h-100 border-0 shadow-sm rounded-4">
+          <div class="card-body p-4 text-center">
+            <span class="contact-icon bg-success-subtle text-success-emphasis mb-3">
+              <WhatsAppIcon size={26} />
+            </span>
+            <h3 class="h6 fw-bold">WhatsApp</h3>
+            <a
+              href="https://wa.me/6282142128202"
+              class="text-success text-decoration-none"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-whatsapp-link
+              data-wa-message="Halo, saya ingin memesan catering"
+            >
+              <span data-setting="whatsapp_display">+62 821-4212-8202</span>
+            </a>
+          </div>
+        </article>
+      </div>
+
+      <div class="col-md-4">
+        <article class="card h-100 border-0 shadow-sm rounded-4">
+          <div class="card-body p-4 text-center">
+            <span class="contact-icon bg-success-subtle text-success-emphasis mb-3">
+              <Clock size={26} />
+            </span>
+            <h3 class="h6 fw-bold">Jam Operasional</h3>
+            <span class="text-secondary" data-setting="opening_hours">
+              Setiap Hari, 07.00 - 20.00 WIB
+            </span>
+          </div>
+        </article>
+      </div>
+
+      <div class="col-md-4">
+        <article class="card h-100 border-0 shadow-sm rounded-4">
+          <div class="card-body p-4 text-center">
+            <span class="contact-icon bg-success-subtle text-success-emphasis mb-3">
+              <MapPin size={26} />
+            </span>
+            <h3 class="h6 fw-bold">Area Layanan</h3>
+            <span class="text-secondary" data-setting="address">
+              Kota dan Kabupaten sekitarnya
+            </span>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div class="bg-success-subtle rounded-4 p-4 mt-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+      <p class="mb-0 fw-semibold text-success-emphasis">
+        Butuh menu khusus untuk acara besar? Hubungi kami sekarang.
+      </p>
+      <a
+        href="https://wa.me/6282142128202"
+        class="btn btn-success rounded-pill px-4"
+        target="_blank"
+        rel="noopener noreferrer"
+        data-whatsapp-link
+        data-wa-message="Halo, saya ingin memesan catering"
+      >
+        <WhatsAppIcon size={18} /> Chat via WhatsApp
+      </a>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,250 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { Save } from "@lucide/astro";
+---
+
+<AdminLayout
+  title="Pengaturan"
+  subtitle="Atur identitas, konten utama, dan kontak website"
+  active="settings"
+>
+  <div class="admin-page-head">
+    <div>
+      <h2>Pengaturan Website</h2>
+      <p>Perubahan akan langsung dipakai oleh website customer.</p>
+    </div>
+  </div>
+
+  <form data-settings-form>
+    <div class="dashboard-grid">
+      <div style="display: grid; gap: 20px;">
+        <section class="card">
+          <div class="card-header">
+            <h3>Identitas Bisnis</h3>
+          </div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="form-field">
+                <label for="business-name">Nama bisnis</label>
+                <input id="business-name" name="business_name" type="text" required />
+              </div>
+
+              <div class="form-field">
+                <label for="tagline">Tagline</label>
+                <input id="tagline" name="tagline" type="text" />
+              </div>
+
+              <div class="form-field">
+                <label for="logo">Logo</label>
+                <img class="image-preview square" data-logo-preview alt="Logo" hidden />
+                <input id="logo" name="logo" type="file" accept="image/jpeg,image/png,image/webp" />
+              </div>
+
+              <div class="form-field">
+                <label for="hero-image">Gambar hero</label>
+                <img class="image-preview" data-hero-preview alt="Gambar hero" hidden />
+                <input id="hero-image" name="hero_image" type="file" accept="image/jpeg,image/png,image/webp" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <h3>Konten Beranda</h3>
+          </div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="form-field full">
+                <label for="hero-title">Judul hero</label>
+                <input id="hero-title" name="hero_title" type="text" required />
+              </div>
+
+              <div class="form-field full">
+                <label for="hero-description">Deskripsi hero</label>
+                <textarea id="hero-description" name="hero_description"></textarea>
+              </div>
+
+              <div class="form-field full">
+                <label for="about-title">Judul tentang kami</label>
+                <input id="about-title" name="about_title" type="text" />
+              </div>
+
+              <div class="form-field full">
+                <label for="about-description">Deskripsi tentang kami</label>
+                <textarea id="about-description" name="about_description"></textarea>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div style="display: grid; gap: 20px;">
+        <section class="card">
+          <div class="card-header">
+            <h3>Kontak &amp; Sosial</h3>
+          </div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="form-field full">
+                <label for="whatsapp">Nomor WhatsApp</label>
+                <input id="whatsapp" name="whatsapp" type="text" placeholder="6282142128202" />
+                <small>Gunakan format internasional tanpa tanda +, contoh 6282142128202.</small>
+              </div>
+
+              <div class="form-field full">
+                <label for="opening-hours">Jam operasional</label>
+                <input id="opening-hours" name="opening_hours" type="text" />
+              </div>
+
+              <div class="form-field full">
+                <label for="address">Area layanan</label>
+                <input id="address" name="address" type="text" />
+              </div>
+
+              <div class="form-field full">
+                <label for="instagram">Instagram</label>
+                <input id="instagram" name="instagram" type="url" placeholder="https://instagram.com/username" />
+              </div>
+
+              <div class="form-field full">
+                <label for="facebook">Facebook</label>
+                <input id="facebook" name="facebook" type="url" placeholder="https://facebook.com/username" />
+              </div>
+
+              <div class="form-field full">
+                <label for="maps-url">Link Google Maps</label>
+                <input id="maps-url" name="maps_url" type="url" placeholder="https://maps.google.com/..." />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-body">
+            <button class="btn btn-primary" type="submit" data-submit style="width: 100%;">
+              <Save size={17} /> Simpan Pengaturan
+            </button>
+            <p class="table-meta" style="margin: 12px 0 0; text-align: center;">
+              Pastikan data sudah benar sebelum menyimpan.
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </form>
+</AdminLayout>
+
+<script>
+  import {
+    api,
+    assetUrl,
+    errorMessage,
+    showToast,
+    setLoading
+  } from "../../lib/admin-api.js";
+
+  type Settings = Record<string, string | null | undefined>;
+
+  const form = document.querySelector<HTMLFormElement>("[data-settings-form]")!;
+  const submitButton = document.querySelector<HTMLButtonElement>("[data-submit]")!;
+  const logoPreview = document.querySelector<HTMLImageElement>("[data-logo-preview]")!;
+  const heroPreview = document.querySelector<HTMLImageElement>("[data-hero-preview]")!;
+  const logoInput = document.querySelector<HTMLInputElement>("#logo")!;
+  const heroInput = document.querySelector<HTMLInputElement>("#hero-image")!;
+
+  const textFields = [
+    "business_name",
+    "tagline",
+    "hero_title",
+    "hero_description",
+    "about_title",
+    "about_description",
+    "whatsapp",
+    "instagram",
+    "facebook",
+    "address",
+    "opening_hours",
+    "maps_url"
+  ];
+
+  function applyPreview(element: HTMLImageElement, path?: string | null) {
+    if (path) {
+      element.src = assetUrl(path);
+      element.hidden = false;
+    } else {
+      element.hidden = true;
+      element.removeAttribute("src");
+    }
+  }
+
+  async function loadSettings() {
+    try {
+      const response = await api("/api/settings");
+      const settings: Settings = response.data || {};
+
+      textFields.forEach((field) => {
+        const input = form.elements.namedItem(field);
+
+        if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
+          input.value = settings[field] ?? "";
+        }
+      });
+
+      applyPreview(logoPreview, settings.logo);
+      applyPreview(heroPreview, settings.hero_image);
+    } catch (error) {
+      showToast(errorMessage(error), "error");
+    }
+  }
+
+  logoInput.addEventListener("change", () => {
+    const file = logoInput.files?.[0];
+
+    if (file) {
+      logoPreview.src = URL.createObjectURL(file);
+      logoPreview.hidden = false;
+    }
+  });
+
+  heroInput.addEventListener("change", () => {
+    const file = heroInput.files?.[0];
+
+    if (file) {
+      heroPreview.src = URL.createObjectURL(file);
+      heroPreview.hidden = false;
+    }
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+
+    ["logo", "hero_image"].forEach((field) => {
+      const entry = formData.get(field);
+
+      if (!(entry instanceof File) || entry.size === 0) {
+        formData.delete(field);
+      }
+    });
+
+    setLoading(submitButton, true);
+
+    try {
+      const response = await api("/api/settings", {
+        method: "PUT",
+        body: formData
+      });
+
+      applyPreview(logoPreview, response.data?.logo);
+      applyPreview(heroPreview, response.data?.hero_image);
+      showToast("Pengaturan website berhasil disimpan");
+    } catch (error) {
+      showToast(errorMessage(error), "error");
+    } finally {
+      setLoading(submitButton, false);
+    }
+  });
+
+  loadSettings();
+</script>

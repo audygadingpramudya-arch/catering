@@ -1,0 +1,79 @@
+---
+import { BadgeCheck, Clock, Wallet, Utensils } from "@lucide/astro";
+
+const features = [
+  {
+    icon: BadgeCheck,
+    title: "Menu Halal & Higienis",
+    description:
+      "Semua bahan dipilih segar setiap hari dan diolah dengan standar kebersihan."
+  },
+  {
+    icon: Clock,
+    title: "Tepat Waktu",
+    description:
+      "Pesanan diantar sesuai jadwal acara Anda, dijamin tidak terlambat."
+  },
+  {
+    icon: Wallet,
+    title: "Harga Terjangkau",
+    description:
+      "Berbagai pilihan paket dengan harga bersahabat untuk semua kalangan."
+  },
+  {
+    icon: Utensils,
+    title: "Porsi Melimpah",
+    description:
+      "Porsi dijamin kenyang, cocok untuk rapat kantor maupun acara keluarga."
+  }
+];
+---
+
+<section class="py-5" id="about">
+  <div class="container py-lg-4">
+    <div class="text-center mx-auto mb-5" style="max-width: 640px;">
+      <span class="badge rounded-pill bg-success-subtle text-success-emphasis px-3 py-2 text-uppercase">
+        Tentang Kami
+      </span>
+      <h2 class="fw-bold mt-3" data-setting="about_title">
+        Catering Pilihan Keluarga Indonesia
+      </h2>
+      <p class="text-secondary mb-0" data-setting="about_description">
+        Lebih dari 10 tahun melayani kebutuhan catering harian, acara kantor,
+        hingga perayaan besar.
+      </p>
+    </div>
+
+    <div class="row g-4 align-items-center">
+      <div class="col-lg-6">
+        <img
+          src="/images/catering.jpg"
+          alt="Hidangan catering Ar Rahman"
+          class="about-image shadow-sm"
+          loading="lazy"
+        />
+      </div>
+
+      <div class="col-lg-6">
+        <div class="row g-3">
+          {
+            features.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <div class="col-sm-6">
+                  <article class="bg-white border rounded-4 p-3 h-100 shadow-sm">
+                    <span class="feature-icon bg-success-subtle text-success-emphasis mb-3">
+                      <Icon size={22} />
+                    </span>
+                    <h3 class="h6 fw-bold mb-1">{feature.title}</h3>
+                    <p class="small text-secondary mb-0">{feature.description}</p>
+                  </article>
+                </div>
+              );
+            })
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

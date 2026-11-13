@@ -1,0 +1,85 @@
+---
+import { Check } from "@lucide/astro";
+
+const packages = [
+  {
+    name: "Paket Hemat",
+    price: "Rp22.000",
+    description: "Untuk kebutuhan makan harian.",
+    features: ["Nasi putih", "Lauk pilihan", "Sayuran", "Sambal"]
+  },
+  {
+    name: "Paket Premium",
+    price: "Rp35.000",
+    description: "Untuk acara keluarga dan kantor.",
+    features: ["Nasi putih", "Ayam spesial", "Sayuran", "Buah", "Minuman"]
+  },
+  {
+    name: "Paket Exclusive",
+    price: "Rp45.000",
+    description: "Untuk acara istimewa.",
+    features: ["Menu lengkap", "Lauk premium", "Dessert", "Minuman", "Pilihan menu"]
+  }
+];
+---
+
+<section class="py-5 bg-white" id="pricing">
+  <div class="container py-lg-4">
+    <div class="text-center mx-auto mb-5" style="max-width: 640px;">
+      <span class="badge rounded-pill bg-success-subtle text-success-emphasis px-3 py-2 text-uppercase">
+        Paket Catering
+      </span>
+      <h2 class="fw-bold mt-3">Pilih Paket Terbaik</h2>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+      {
+        packages.map((item, index) => (
+          <div class="col-md-6 col-lg-4">
+            <article
+              class:list={[
+                "card",
+                "h-100",
+                "border-0",
+                "shadow-sm",
+                "rounded-4",
+                index === 1 && "pricing-featured"
+              ]}
+            >
+              <div class="card-body p-4 d-flex flex-column">
+                {index === 1 && (
+                  <span class="badge bg-success rounded-pill align-self-start mb-2">
+                    Paling Populer
+                  </span>
+                )}
+
+                <h3 class="h5 fw-bold">{item.name}</h3>
+                <p class="display-6 fw-bold text-success mb-2">{item.price}</p>
+                <p class="small text-secondary">{item.description}</p>
+
+                <ul class="list-unstyled small d-grid gap-2 my-3">
+                  {item.features.map((feature) => (
+                    <li class="d-flex align-items-center gap-2">
+                      <Check size={16} class="text-success" /> {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                <a
+                  class="btn btn-success rounded-pill w-100 mt-auto"
+                  href={`https://wa.me/6282142128202?text=${encodeURIComponent(`Halo, saya ingin bertanya tentang ${item.name}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-whatsapp-link
+                  data-wa-message={`Halo, saya ingin bertanya tentang ${item.name}`}
+                >
+                  Pilih Paket
+                </a>
+              </div>
+            </article>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

@@ -1,0 +1,181 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import {
+  UtensilsCrossed,
+  MessageSquareQuote,
+  Images,
+  ToggleLeft,
+  ArrowRight
+} from "@lucide/astro";
+---
+
+<AdminLayout
+  title="Ringkasan"
+  subtitle="Pantau konten dan kelola website catering Anda"
+  active="overview"
+>
+  <div class="stat-grid">
+    <article class="stat-card">
+      <span class="stat-card-icon"><UtensilsCrossed size={22} /></span>
+      <strong data-stat="menus">-</strong>
+      <span>Total menu</span>
+    </article>
+
+    <article class="stat-card">
+      <span class="stat-card-icon"><ToggleLeft size={22} /></span>
+      <strong data-stat="active-menus">-</strong>
+      <span>Menu aktif</span>
+    </article>
+
+    <article class="stat-card">
+      <span class="stat-card-icon"><MessageSquareQuote size={22} /></span>
+      <strong data-stat="testimonials">-</strong>
+      <span>Testimoni</span>
+    </article>
+
+    <article class="stat-card">
+      <span class="stat-card-icon"><Images size={22} /></span>
+      <strong data-stat="gallery">-</strong>
+      <span>Foto galeri</span>
+    </article>
+  </div>
+
+  <div class="dashboard-grid">
+    <section class="card">
+      <div class="card-header">
+        <h3>Menu terbaru</h3>
+        <a class="btn btn-secondary btn-sm" href="/admin/menus">Kelola menu</a>
+      </div>
+      <div class="card-body">
+        <div class="recent-list" data-recent-menus>
+          <div class="admin-loading">Memuat data menu...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h3>Akses cepat</h3>
+      </div>
+      <div class="card-body">
+        <div class="quick-links">
+          <a class="quick-link" href="/admin/menus">
+            <span class="quick-link-icon"><UtensilsCrossed size={18} /></span>
+            <span>
+              <strong>Tambah menu baru</strong>
+              <span>Atur nama, harga, foto, dan status menu</span>
+            </span>
+          </a>
+
+          <a class="quick-link" href="/admin/testimonials">
+            <span class="quick-link-icon"><MessageSquareQuote size={18} /></span>
+            <span>
+              <strong>Kelola testimoni</strong>
+              <span>Tampilkan ulasan pelanggan terbaik</span>
+            </span>
+          </a>
+
+          <a class="quick-link" href="/admin/gallery">
+            <span class="quick-link-icon"><Images size={18} /></span>
+            <span>
+              <strong>Perbarui galeri</strong>
+              <span>Unggah foto hidangan dan acara</span>
+            </span>
+          </a>
+
+          <a class="quick-link" href="/admin/settings">
+            <span class="quick-link-icon"><ArrowRight size={18} /></span>
+            <span>
+              <strong>Pengaturan website</strong>
+              <span>Ubah identitas, kontak, dan konten utama</span>
+            </span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  import {
+    api,
+    assetUrl,
+    errorMessage,
+    escapeHtml,
+    formatRupiah,
+    showToast
+  } from "../../lib/admin-api.js";
+
+  type Menu = {
+    name: string;
+    category: string;
+    price: number;
+    image: string | null;
+    is_active: boolean;
+  };
+
+  const recentContainer = document.querySelector<HTMLElement>("[data-recent-menus]")!;
+
+  function setStat(name: string, value: string | number) {
+    const element = document.querySelector(`[data-stat="${name}"]`);
+
+    if (element) {
+      element.textContent = String(value);
+    }
+  }
+
+  (async () => {
+    try {
+      const [menusResponse, testimonialsResponse, galleryResponse] =
+        await Promise.all([
+          api("/api/menus?all=1"),
+          api("/api/testimonials?all=1"),
+          api("/api/gallery")
+        ]);
+
+      const menus = (menusResponse.data || []) as Menu[];
+      const testimonials = (testimonialsResponse.data || []) as unknown[];
+      const gallery = (galleryResponse.data || []) as unknown[];
+
+      setStat("menus", menus.length);
+      setStat("active-menus", menus.filter((menu) => menu.is_active).length);
+      setStat("testimonials", testimonials.length);
+      setStat("gallery", gallery.length);
+
+      if (menus.length === 0) {
+        recentContainer.innerHTML = `
+          <div class="empty-state">
+            <strong>Belum ada menu</strong>
+            <span>Tambahkan menu pertama Anda dari halaman Menu.</span>
+          </div>
+        `;
+        return;
+      }
+
+      recentContainer.innerHTML = menus
+        .slice(0, 5)
+        .map(
+          (menu) => `
+            <div class="recent-item">
+              <img src="${escapeHtml(assetUrl(menu.image))}" alt="${escapeHtml(menu.name)}" />
+              <div class="recent-item-text">
+                <strong>${escapeHtml(menu.name)}</strong>
+                <span>${escapeHtml(menu.category)}</span>
+              </div>
+              <span class="recent-item-price">${formatRupiah(menu.price)}</span>
+            </div>
+          `
+        )
+        .join("");
+    } catch (error) {
+      showToast(errorMessage(error), "error");
+
+      recentContainer.innerHTML = `
+        <div class="empty-state">
+          <strong>Gagal memuat data</strong>
+          <span>${escapeHtml(errorMessage(error))}</span>
+        </div>
+      `;
+    }
+  })();
+</script>

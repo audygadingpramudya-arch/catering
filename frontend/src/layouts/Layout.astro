@@ -1,0 +1,26 @@
+---
+import "bootstrap/dist/css/bootstrap.min.css";
+import "../global/style.css";
+---
+
+<!doctype html>
+<html lang="id" data-bs-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/jpeg" href="/images/logo.jpg" />
+    <meta name="generator" content={Astro.generator} />
+    <meta
+      name="description"
+      content="Ar Rahman Catering — layanan catering nasi box, prasmanan, dan tumpeng dengan menu halal, harga terjangkau, dan pengiriman tepat waktu."
+    />
+    <title>Ar Rahman Catering — Catering Nasi Box & Prasmanan</title>
+  </head>
+  <body class="bg-body-tertiary">
+    <slot />
+
+    <script>
+      import "bootstrap/dist/js/bootstrap.bundle.min.js";
+    </script>
+  </body>
+</html>

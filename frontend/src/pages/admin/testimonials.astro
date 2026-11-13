@@ -1,0 +1,271 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { Plus } from "@lucide/astro";
+---
+
+<AdminLayout
+  title="Testimoni"
+  subtitle="Tampilkan ulasan pelanggan di halaman website"
+  active="testimonials"
+>
+  <div class="admin-page-head">
+    <div>
+      <h2>Testimoni Pelanggan</h2>
+      <p>Kelola ulasan yang tampil pada bagian testimoni.</p>
+    </div>
+
+    <div class="admin-actions">
+      <button class="btn btn-primary" type="button" data-add-testimonial>
+        <Plus size={17} /> Tambah Testimoni
+      </button>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="card-body">
+      <div class="testimonial-list" data-testimonial-list>
+        <div class="admin-loading">Memuat testimoni...</div>
+      </div>
+    </div>
+  </section>
+
+  <dialog class="admin-dialog" data-testimonial-dialog>
+    <form data-testimonial-form>
+      <div class="dialog-header">
+        <h3 data-dialog-title>Tambah Testimoni</h3>
+        <button class="dialog-close" type="button" data-dialog-close aria-label="Tutup">
+          &times;
+        </button>
+      </div>
+
+      <div class="dialog-body">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="testimonial-name">Nama pelanggan</label>
+            <input id="testimonial-name" name="name" type="text" required placeholder="Nama pelanggan" />
+          </div>
+
+          <div class="form-field">
+            <label for="testimonial-role">Keterangan</label>
+            <input id="testimonial-role" name="role" type="text" placeholder="Contoh: Pelanggan Kantor" />
+          </div>
+
+          <div class="form-field">
+            <label for="testimonial-rating">Rating</label>
+            <select id="testimonial-rating" name="rating">
+              <option value="5">5 bintang</option>
+              <option value="4">4 bintang</option>
+              <option value="3">3 bintang</option>
+              <option value="2">2 bintang</option>
+              <option value="1">1 bintang</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label>Tampilkan di website</label>
+            <label class="checkbox-field">
+              <input name="is_active" type="checkbox" data-active checked />
+              Testimoni aktif
+            </label>
+          </div>
+
+          <div class="form-field full">
+            <label for="testimonial-message">Pesan</label>
+            <textarea
+              id="testimonial-message"
+              name="message"
+              required
+              placeholder="Tuliskan isi testimoni"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-secondary" type="button" data-dialog-close>Batal</button>
+          <button class="btn btn-primary" type="submit" data-submit>Simpan Testimoni</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+</AdminLayout>
+
+<script>
+  import {
+    api,
+    errorMessage,
+    escapeHtml,
+    showToast,
+    setLoading
+  } from "../../lib/admin-api.js";
+
+  type Testimonial = {
+    id: number;
+    name: string;
+    role: string | null;
+    message: string;
+    rating: number;
+    is_active: boolean;
+  };
+
+  const list = document.querySelector<HTMLElement>("[data-testimonial-list]")!;
+  const dialog = document.querySelector<HTMLDialogElement>("[data-testimonial-dialog]")!;
+  const form = document.querySelector<HTMLFormElement>("[data-testimonial-form]")!;
+  const dialogTitle = document.querySelector<HTMLElement>("[data-dialog-title]")!;
+  const activeInput = document.querySelector<HTMLInputElement>("[data-active]")!;
+  const submitButton = document.querySelector<HTMLButtonElement>("[data-submit]")!;
+  let testimonialList: Testimonial[] = [];
+
+  function getField(name: string) {
+    return form.elements.namedItem(name) as
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | HTMLSelectElement;
+  }
+
+  function stars(rating: number) {
+    return `${"★".repeat(rating)}${"☆".repeat(5 - rating)}`;
+  }
+
+  function openCreate() {
+    form.reset();
+    form.dataset.id = "";
+    dialogTitle.textContent = "Tambah Testimoni";
+    activeInput.checked = true;
+    getField("rating").value = "5";
+    dialog.showModal();
+  }
+
+  function openEdit(item: Testimonial) {
+    form.reset();
+    form.dataset.id = String(item.id);
+    dialogTitle.textContent = "Edit Testimoni";
+    getField("name").value = item.name;
+    getField("role").value = item.role || "";
+    getField("message").value = item.message;
+    getField("rating").value = String(item.rating);
+    activeInput.checked = Boolean(item.is_active);
+    dialog.showModal();
+  }
+
+  function renderTestimonials() {
+    if (testimonialList.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <strong>Belum ada testimoni</strong>
+          <span>Tambahkan testimoni pertama untuk ditampilkan di website.</span>
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = testimonialList
+      .map(
+        (item) => `
+          <article class="testimonial-item">
+            <span class="testimonial-avatar">${escapeHtml(item.name.charAt(0).toUpperCase())}</span>
+            <div>
+              <h4>${escapeHtml(item.name)}</h4>
+              <span class="role">${escapeHtml(item.role || "Pelanggan")}</span>
+              <p>${escapeHtml(item.message)}</p>
+            </div>
+            <div class="testimonial-side">
+              <span class="testimonial-stars">${stars(Number(item.rating))}</span>
+              <span class="badge ${item.is_active ? "badge-success" : "badge-muted"}">
+                ${item.is_active ? "Aktif" : "Nonaktif"}
+              </span>
+              <div class="table-actions">
+                <button class="btn btn-secondary btn-sm" type="button" data-edit="${item.id}">Edit</button>
+                <button class="btn btn-danger btn-sm" type="button" data-delete="${item.id}">Hapus</button>
+              </div>
+            </div>
+          </article>
+        `
+      )
+      .join("");
+  }
+
+  async function loadTestimonials() {
+    try {
+      const response = await api("/api/testimonials?all=1");
+      testimonialList = response.data || [];
+      renderTestimonials();
+    } catch (error) {
+      showToast(errorMessage(error), "error");
+    }
+  }
+
+  document
+    .querySelector("[data-add-testimonial]")
+    ?.addEventListener("click", openCreate);
+
+  document.querySelectorAll("[data-dialog-close]").forEach((button) => {
+    button.addEventListener("click", () => dialog.close());
+  });
+
+  list.addEventListener("click", async (event) => {
+    const target = event.target as HTMLElement;
+    const editButton = target.closest<HTMLButtonElement>("[data-edit]");
+    const deleteButton = target.closest<HTMLButtonElement>("[data-delete]");
+
+    if (editButton) {
+      const item = testimonialList.find(
+        (testimonial) => String(testimonial.id) === editButton.dataset.edit
+      );
+
+      if (item) {
+        openEdit(item);
+      }
+    }
+
+    if (deleteButton) {
+      const item = testimonialList.find(
+        (testimonial) => String(testimonial.id) === deleteButton.dataset.delete
+      );
+
+      if (!item) {
+        return;
+      }
+
+      if (!window.confirm(`Hapus testimoni dari "${item.name}"?`)) {
+        return;
+      }
+
+      try {
+        await api(`/api/testimonials/${item.id}`, { method: "DELETE" });
+        showToast("Testimoni berhasil dihapus");
+        await loadTestimonials();
+      } catch (error) {
+        showToast(errorMessage(error), "error");
+      }
+    }
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    const id = form.dataset.id;
+
+    formData.set("is_active", activeInput.checked ? "true" : "false");
+
+    setLoading(submitButton, true);
+
+    try {
+      await api(id ? `/api/testimonials/${id}` : "/api/testimonials", {
+        method: id ? "PUT" : "POST",
+        body: formData
+      });
+
+      showToast(
+        id ? "Testimoni berhasil diperbarui" : "Testimoni berhasil ditambahkan"
+      );
+      dialog.close();
+      await loadTestimonials();
+    } catch (error) {
+      showToast(errorMessage(error), "error");
+    } finally {
+      setLoading(submitButton, false);
+    }
+  });
+
+  loadTestimonials();
+</script>

@@ -1,0 +1,121 @@
+---
+import "../../global/admin.css";
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/jpeg" href="/images/logo.jpg" />
+    <title>Login Admin — Ar Rahman Catering</title>
+  </head>
+  <body>
+    <div class="login-page">
+      <section class="login-visual">
+        <div class="login-visual-top">
+          <span class="admin-brand-logo">AR</span>
+          <span>AR RAHMAN CATERING</span>
+        </div>
+
+        <div class="login-visual-copy">
+          <h1>Kelola website catering dalam satu dashboard.</h1>
+          <p>
+            Perbarui menu, testimoni, galeri, dan informasi kontak tanpa perlu
+            menyentuh kode.
+          </p>
+        </div>
+
+        <div class="login-visual-footer">
+          Dashboard admin &copy; {new Date().getFullYear()} Ar Rahman Catering
+        </div>
+      </section>
+
+      <section class="login-panel">
+        <div class="login-card">
+          <h2>Selamat datang kembali</h2>
+          <p>Masuk menggunakan akun admin untuk melanjutkan.</p>
+
+          <div class="login-alert" data-login-alert></div>
+
+          <form data-login-form>
+            <div class="form-field">
+              <label for="username">Username</label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                autocomplete="username"
+                placeholder="Masukkan username"
+                required
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="password">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                placeholder="Masukkan password"
+                required
+              />
+            </div>
+
+            <button class="btn btn-primary" type="submit" data-login-submit>
+              Masuk ke Dashboard
+            </button>
+          </form>
+
+          <a class="login-back" href="/">&larr; Kembali ke website</a>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      import { api, errorMessage, setLoading } from "../../lib/admin-api.js";
+
+      const form = document.querySelector<HTMLFormElement>("[data-login-form]")!;
+      const alertBox = document.querySelector<HTMLElement>("[data-login-alert]")!;
+      const submitButton = document.querySelector<HTMLButtonElement>("[data-login-submit]")!;
+
+      api("/api/auth/me")
+        .then(() => {
+          window.location.href = "/admin";
+        })
+        .catch(() => {});
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        alertBox.classList.remove("visible");
+        setLoading(submitButton, true, "Memproses...");
+
+        const formData = new FormData(form);
+
+        try {
+          await api("/api/auth/login", {
+            method: "POST",
+            body: {
+              username: formData.get("username"),
+              password: formData.get("password")
+            }
+          });
+
+          window.location.href = "/admin";
+        } catch (error) {
+          const status = (error as { status?: number }).status;
+
+          alertBox.textContent =
+            status === undefined
+              ? "Tidak dapat terhubung ke server API. Pastikan backend berjalan."
+              : errorMessage(error);
+          alertBox.classList.add("visible");
+        } finally {
+          setLoading(submitButton, false);
+        }
+      });
+    </script>
+  </body>
+</html>

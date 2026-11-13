@@ -1,0 +1,248 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { Plus } from "@lucide/astro";
+---
+
+<AdminLayout
+  title="Galeri"
+  subtitle="Unggah dan atur foto yang tampil di galeri website"
+  active="gallery"
+>
+  <div class="admin-page-head">
+    <div>
+      <h2>Galeri Foto</h2>
+      <p>Foto ditampilkan di website sesuai urutan yang Anda atur.</p>
+    </div>
+
+    <div class="admin-actions">
+      <button class="btn btn-primary" type="button" data-add-gallery>
+        <Plus size={17} /> Tambah Foto
+      </button>
+    </div>
+  </div>
+
+  <div class="gallery-grid" data-gallery-list>
+    <div class="admin-loading">Memuat galeri...</div>
+  </div>
+
+  <dialog class="admin-dialog" data-gallery-dialog>
+    <form data-gallery-form>
+      <div class="dialog-header">
+        <h3 data-dialog-title>Tambah Foto</h3>
+        <button class="dialog-close" type="button" data-dialog-close aria-label="Tutup">
+          &times;
+        </button>
+      </div>
+
+      <div class="dialog-body">
+        <div class="form-grid">
+          <div class="form-field full">
+            <label for="gallery-image">Foto galeri</label>
+            <img class="image-preview" data-image-preview alt="Pratinjau foto" hidden />
+            <input id="gallery-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" />
+            <small>Format JPG, PNG, atau WEBP. Maksimal 5MB.</small>
+          </div>
+
+          <div class="form-field">
+            <label for="gallery-title">Judul foto</label>
+            <input id="gallery-title" name="title" type="text" required placeholder="Contoh: Nasi box catering" />
+          </div>
+
+          <div class="form-field">
+            <label for="gallery-order">Urutan tampil</label>
+            <input id="gallery-order" name="sort_order" type="number" step="1" value="0" />
+            <small>Angka lebih kecil tampil lebih dulu.</small>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-secondary" type="button" data-dialog-close>Batal</button>
+          <button class="btn btn-primary" type="submit" data-submit>Simpan Foto</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+</AdminLayout>
+
+<script>
+  import {
+    api,
+    assetUrl,
+    errorMessage,
+    escapeHtml,
+    showToast,
+    setLoading
+  } from "../../lib/admin-api.js";
+
+  type GalleryItem = {
+    id: number;
+    title: string;
+    image: string;
+    sort_order: number;
+  };
+
+  const list = document.querySelector<HTMLElement>("[data-gallery-list]")!;
+  const dialog = document.querySelector<HTMLDialogElement>("[data-gallery-dialog]")!;
+  const form = document.querySelector<HTMLFormElement>("[data-gallery-form]")!;
+  const dialogTitle = document.querySelector<HTMLElement>("[data-dialog-title]")!;
+  const imageInput = document.querySelector<HTMLInputElement>("#gallery-image")!;
+  const imagePreview = document.querySelector<HTMLImageElement>("[data-image-preview]")!;
+  const submitButton = document.querySelector<HTMLButtonElement>("[data-submit]")!;
+  let galleryList: GalleryItem[] = [];
+
+  function getField(name: string) {
+    return form.elements.namedItem(name) as HTMLInputElement;
+  }
+
+  function previewFile(file?: File) {
+    if (!file) {
+      return;
+    }
+
+    imagePreview.src = URL.createObjectURL(file);
+    imagePreview.hidden = false;
+  }
+
+  function openCreate() {
+    form.reset();
+    form.dataset.id = "";
+    dialogTitle.textContent = "Tambah Foto";
+    imageInput.required = true;
+    imagePreview.hidden = true;
+    imagePreview.removeAttribute("src");
+    getField("sort_order").value = "0";
+    dialog.showModal();
+  }
+
+  function openEdit(item: GalleryItem) {
+    form.reset();
+    form.dataset.id = String(item.id);
+    dialogTitle.textContent = "Edit Foto";
+    imageInput.required = false;
+    getField("title").value = item.title;
+    getField("sort_order").value = String(item.sort_order);
+    imagePreview.src = assetUrl(item.image);
+    imagePreview.hidden = false;
+    dialog.showModal();
+  }
+
+  function renderGallery() {
+    if (galleryList.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state card" style="grid-column: 1 / -1;">
+          <strong>Belum ada foto galeri</strong>
+          <span>Unggah foto pertama untuk ditampilkan di website.</span>
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = galleryList
+      .map(
+        (item) => `
+          <article class="gallery-card">
+            <img src="${escapeHtml(assetUrl(item.image))}" alt="${escapeHtml(item.title)}" />
+            <div class="gallery-card-body">
+              <div>
+                <strong>${escapeHtml(item.title)}</strong>
+                <span class="table-meta">Urutan ${item.sort_order}</span>
+              </div>
+              <div class="gallery-card-actions">
+                <button class="btn btn-secondary btn-sm" type="button" data-edit="${item.id}">Edit</button>
+                <button class="btn btn-danger btn-sm" type="button" data-delete="${item.id}">Hapus</button>
+              </div>
+            </div>
+          </article>
+        `
+      )
+      .join("");
+  }
+
+  async function loadGallery() {
+    try {
+      const response = await api("/api/gallery");
+      galleryList = response.data || [];
+      renderGallery();
+    } catch (error) {
+      showToast(errorMessage(error), "error");
+    }
+  }
+
+  document.querySelector("[data-add-gallery]")?.addEventListener("click", openCreate);
+
+  document.querySelectorAll("[data-dialog-close]").forEach((button) => {
+    button.addEventListener("click", () => dialog.close());
+  });
+
+  imageInput.addEventListener("change", () => {
+    previewFile(imageInput.files?.[0]);
+  });
+
+  list.addEventListener("click", async (event) => {
+    const target = event.target as HTMLElement;
+    const editButton = target.closest<HTMLButtonElement>("[data-edit]");
+    const deleteButton = target.closest<HTMLButtonElement>("[data-delete]");
+
+    if (editButton) {
+      const item = galleryList.find(
+        (galleryItem) => String(galleryItem.id) === editButton.dataset.edit
+      );
+
+      if (item) {
+        openEdit(item);
+      }
+    }
+
+    if (deleteButton) {
+      const item = galleryList.find(
+        (galleryItem) => String(galleryItem.id) === deleteButton.dataset.delete
+      );
+
+      if (!item) {
+        return;
+      }
+
+      if (!window.confirm(`Hapus foto "${item.title}"?`)) {
+        return;
+      }
+
+      try {
+        await api(`/api/gallery/${item.id}`, { method: "DELETE" });
+        showToast("Foto berhasil dihapus");
+        await loadGallery();
+      } catch (error) {
+        showToast(errorMessage(error), "error");
+      }
+    }
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    const id = form.dataset.id;
+    const imageEntry = formData.get("image");
+
+    if (!(imageEntry instanceof File) || imageEntry.size === 0) {
+      formData.delete("image");
+    }
+
+    setLoading(submitButton, true);
+
+    try {
+      await api(id ? `/api/gallery/${id}` : "/api/gallery", {
+        method: id ? "PUT" : "POST",
+        body: formData
+      });
+
+      showToast(id ? "Foto berhasil diperbarui" : "Foto berhasil ditambahkan");
+      dialog.close();
+      await loadGallery();
+    } catch (error) {
+      showToast(errorMessage(error), "error");
+    } finally {
+      setLoading(submitButton, false);
+    }
+  });
+
+  loadGallery();
+</script>

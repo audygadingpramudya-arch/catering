@@ -1,0 +1,95 @@
+---
+import InstagramIcon from "./icons/InstagramIcon.astro";
+import FacebookIcon from "./icons/FacebookIcon.astro";
+import WhatsAppIcon from "./icons/WhatsAppIcon.astro";
+
+const year = new Date().getFullYear();
+
+const links = [
+  { href: "#home", label: "Home" },
+  { href: "#about", label: "Tentang" },
+  { href: "#menu", label: "Menu" },
+  { href: "#gallery", label: "Galeri" },
+  { href: "#pricing", label: "Paket" }
+];
+---
+
+<footer class="bg-dark text-white pt-5 pb-3 mt-auto">
+  <div class="container">
+    <div class="row g-4 align-items-start pb-4 border-bottom border-secondary-subtle">
+      <div class="col-lg-5">
+        <a href="#home" class="d-inline-flex align-items-center gap-2 text-white text-decoration-none fw-bold">
+          <img
+            src="/images/logo.jpg"
+            alt="Logo Ar Rahman Catering"
+            class="brand-logo"
+            width="36"
+            height="36"
+            data-setting-image="logo"
+          />
+          <span class="text-uppercase" data-setting="business_name">AR RAHMAN CATERING</span>
+        </a>
+        <p class="text-white-50 small mt-3 mb-0" style="max-width: 340px;">
+          Catering halal untuk nasi box, prasmanan, dan acara keluarga dengan
+          pengiriman tepat waktu.
+        </p>
+      </div>
+
+      <div class="col-6 col-lg-4">
+        <h2 class="h6 text-uppercase text-white-50 mb-3">Navigasi</h2>
+        <ul class="list-unstyled d-grid gap-2 mb-0">
+          {
+            links.map((link) => (
+              <li>
+                <a class="footer-link small" href={link.href}>
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <div class="col-6 col-lg-3">
+        <h2 class="h6 text-uppercase text-white-50 mb-3">Ikuti Kami</h2>
+        <div class="d-flex gap-2">
+          <a
+            class="footer-social"
+            href="https://wa.me/6282142128202"
+            aria-label="WhatsApp"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-whatsapp-link
+            data-wa-message="Halo, saya ingin memesan catering"
+          >
+            <WhatsAppIcon size={18} />
+          </a>
+          <a
+            class="footer-social"
+            href="https://instagram.com"
+            aria-label="Instagram"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-social="instagram"
+          >
+            <InstagramIcon size={18} />
+          </a>
+          <a
+            class="footer-social"
+            href="https://facebook.com"
+            aria-label="Facebook"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-social="facebook"
+          >
+            <FacebookIcon size={18} />
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-white-50 small text-center mb-0 pt-3">
+      &copy; {year} <span data-setting="business_name">Ar Rahman Catering</span>. Semua hak dilindungi.
+    </p>
+  </div>
+</footer>

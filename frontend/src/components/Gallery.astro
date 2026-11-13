@@ -1,0 +1,72 @@
+---
+import { X, ZoomIn } from "@lucide/astro";
+
+const images = [
+  { src: "/images/nasi-box.jpg", alt: "Nasi box catering" },
+  { src: "/images/ayam-bakar.jpg", alt: "Ayam bakar" },
+  { src: "/images/prasmanan.jpg", alt: "Prasmanan" },
+  { src: "/images/tumpeng.jpg", alt: "Nasi tumpeng" },
+  { src: "/images/buffet.jpg", alt: "Buffet prasmanan" },
+  { src: "/images/catering.jpg", alt: "Hidangan lengkap" }
+];
+---
+
+<section class="py-5" id="gallery">
+  <div class="container py-lg-4">
+    <div class="text-center mx-auto mb-4" style="max-width: 640px;">
+      <span class="badge rounded-pill bg-success-subtle text-success-emphasis px-3 py-2 text-uppercase">
+        Galeri
+      </span>
+      <h2 class="fw-bold mt-3">Galeri Hidangan Kami</h2>
+    </div>
+
+    <div class="row g-3" data-gallery-grid>
+      {
+        images.map((image) => (
+          <div class="col-6 col-md-4">
+            <button
+              class="gallery-thumb"
+              data-image={image.src}
+              data-alt={image.alt}
+              aria-label={`Lihat ${image.alt}`}
+            >
+              <img src={image.src} alt={image.alt} loading="lazy" />
+              <span class="gallery-thumb-overlay"><ZoomIn size={26} /></span>
+            </button>
+          </div>
+        ))
+      }
+    </div>
+
+    <dialog class="gallery-dialog">
+      <button class="gallery-close" aria-label="Tutup"><X size={18} /></button>
+      <img class="gallery-preview" src="" alt="" />
+    </dialog>
+  </div>
+</section>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>(".gallery-dialog");
+  const preview = document.querySelector<HTMLImageElement>(".gallery-preview");
+  const grid = document.querySelector<HTMLElement>("[data-gallery-grid]");
+
+  grid?.addEventListener("click", (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>(".gallery-thumb");
+
+    if (!button || !dialog || !preview) {
+      return;
+    }
+
+    preview.src = button.dataset.image || "";
+    preview.alt = button.dataset.alt || "Foto makanan";
+    dialog.showModal();
+  });
+
+  document.querySelector(".gallery-close")?.addEventListener("click", () => dialog?.close());
+
+  dialog?.addEventListener("click", (event) => {
+    if (event.target === dialog) {
+      dialog.close();
+    }
+  });
+</script>

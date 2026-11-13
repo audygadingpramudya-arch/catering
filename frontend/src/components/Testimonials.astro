@@ -1,0 +1,44 @@
+---
+import { Star } from "@lucide/astro";
+import { testimonials } from "../data/testimonials.js";
+---
+
+<section class="py-5" id="testimonials">
+  <div class="container py-lg-4">
+    <div class="text-center mx-auto mb-5" style="max-width: 640px;">
+      <span class="badge rounded-pill bg-success-subtle text-success-emphasis px-3 py-2 text-uppercase">
+        Testimoni
+      </span>
+      <h2 class="fw-bold mt-3">Apa Kata Pelanggan Kami?</h2>
+    </div>
+
+    <div class="row g-4" data-testimonial-grid>
+      {
+        testimonials.map((item) => (
+          <div class="col-md-6 col-lg-4">
+            <article class="card h-100 border-0 shadow-sm rounded-4">
+              <div class="card-body p-4 text-center d-flex flex-column">
+                <div class="testimonial-stars d-flex justify-content-center gap-1 mb-3">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <Star
+                      size={18}
+                      fill={index < item.rating ? "currentColor" : "none"}
+                      class={index < item.rating ? "" : "opacity-25"}
+                    />
+                  ))}
+                </div>
+
+                <p class="fst-italic text-secondary">"{item.message}"</p>
+
+                <div class="mt-auto pt-2">
+                  <h3 class="h6 fw-bold mb-0">{item.name}</h3>
+                  <span class="small text-secondary">{item.role}</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

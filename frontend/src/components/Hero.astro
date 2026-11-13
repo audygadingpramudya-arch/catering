@@ -1,0 +1,76 @@
+---
+import { ArrowRight, Award, CalendarCheck, Star } from "@lucide/astro";
+import WhatsAppIcon from "./icons/WhatsAppIcon.astro";
+
+const stats = [
+  { icon: Award, value: "10+", label: "Tahun Pengalaman" },
+  { icon: CalendarCheck, value: "500+", label: "Acara Terlayani" },
+  { icon: Star, value: "4.9", label: "Rating Pelanggan" }
+];
+---
+
+<section id="home" class="hero-section">
+  <div class="container py-5">
+    <div class="row align-items-center g-5 py-lg-4">
+      <div class="col-lg-7">
+        <span class="badge rounded-pill bg-success-subtle text-success-emphasis px-3 py-2 text-uppercase">
+          Catering Halal Terpercaya
+        </span>
+
+        <h1 class="display-5 fw-bold lh-sm mt-3" data-setting="hero_title">
+          Lezat &amp; Praktis untuk Setiap Acara Anda
+        </h1>
+
+        <p class="lead text-secondary mt-3" data-setting="hero_description">
+          Ar Rahman Catering menyediakan nasi box, prasmanan, dan menu syukuran
+          dengan cita rasa rumahan, harga terjangkau, dan pengiriman tepat waktu.
+        </p>
+
+        <div class="d-flex flex-wrap gap-2 mt-4">
+          <a href="#menu" class="btn btn-success btn-lg rounded-pill px-4">
+            Lihat Menu <ArrowRight size={18} />
+          </a>
+
+          <a
+            href="https://wa.me/6282142128202"
+            class="btn btn-outline-success btn-lg rounded-pill px-4"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-whatsapp-link
+            data-wa-message="Halo, saya ingin memesan catering"
+          >
+            <WhatsAppIcon size={18} /> Pesan Sekarang
+          </a>
+        </div>
+
+        <div class="row g-3 mt-4">
+          {
+            stats.map((stat) => {
+              const Icon = stat.icon;
+              return (
+                <div class="col-4">
+                  <div class="bg-white rounded-4 shadow-sm p-3 h-100">
+                    <span class="hero-stat-icon bg-success-subtle text-success-emphasis mb-2">
+                      <Icon size={20} />
+                    </span>
+                    <strong class="d-block fs-4 lh-1">{stat.value}</strong>
+                    <span class="small text-secondary">{stat.label}</span>
+                  </div>
+                </div>
+              );
+            })
+          }
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <img
+          src="/images/hero.jpg"
+          alt="Hidangan catering Ar Rahman"
+          class="hero-visual"
+          data-setting-image="hero_image"
+        />
+      </div>
+    </div>
+  </div>
+</section>

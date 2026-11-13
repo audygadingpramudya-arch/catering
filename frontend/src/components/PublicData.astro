@@ -1,0 +1,322 @@
+---
+---
+
+<script>
+  type Settings = Record<string, string | null | undefined>;
+
+  type Menu = {
+    name: string;
+    category: string;
+    price: number;
+    description?: string | null;
+    image?: string | null;
+    popular?: boolean;
+  };
+
+  type GalleryItem = {
+    image: string;
+    title: string;
+  };
+
+  type Testimonial = {
+    rating: number | string;
+    message: string;
+    name: string;
+    role?: string | null;
+  };
+
+  type ApiResponse<T> = {
+    data: T;
+  };
+
+  const defaultBase = "http://localhost:5000";
+  const apiBase = (import.meta.env.PUBLIC_API_URL || defaultBase).replace(/\/$/, "");
+  const defaultWhatsApp = "6282142128202";
+
+  function assetUrl(path?: string | null) {
+    if (!path) {
+      return "";
+    }
+
+    if (/^https?:\/\//i.test(path)) {
+      return path;
+    }
+
+    if (path.startsWith("/uploads/")) {
+      return `${apiBase}${path}`;
+    }
+
+    return path;
+  }
+
+  function escapeHtml(value: unknown) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function formatRupiah(value: unknown) {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0
+    }).format(Number(value) || 0);
+  }
+
+  async function getJson<T>(path: string): Promise<ApiResponse<T>> {
+    const response = await fetch(`${apiBase}${path}`, { cache: "no-store" });
+
+    if (!response.ok) {
+      throw new Error(`Gagal memuat ${path}`);
+    }
+
+    return response.json() as Promise<ApiResponse<T>>;
+  }
+
+  function whatsappLink(message: string, number?: string | null) {
+    return `https://wa.me/${number || defaultWhatsApp}?text=${encodeURIComponent(message)}`;
+  }
+
+  function applySettings(settings?: Settings | null) {
+    if (!settings) {
+      return;
+    }
+
+    document.querySelectorAll<HTMLElement>("[data-setting]").forEach((element) => {
+      const field = element.dataset.setting;
+
+      if (!field) {
+        return;
+      }
+
+      if (field === "whatsapp_display") {
+        if (settings.whatsapp) {
+          element.textContent = `+${settings.whatsapp}`;
+        }
+        return;
+      }
+
+      const value = settings[field];
+
+      if (value !== undefined && value !== null) {
+        element.textContent = value;
+      }
+    });
+
+    document
+      .querySelectorAll<HTMLImageElement>("[data-setting-image]")
+      .forEach((element) => {
+        const field = element.dataset.settingImage;
+        const value = field ? settings[field] : undefined;
+
+        if (value) {
+          element.src = assetUrl(value);
+        }
+      });
+
+    document
+      .querySelectorAll<HTMLAnchorElement>("[data-whatsapp-link]")
+      .forEach((element) => {
+        const message =
+          element.dataset.waMessage || "Halo, saya ingin memesan catering";
+        element.href = whatsappLink(message, settings.whatsapp);
+      });
+
+    document.querySelectorAll<HTMLAnchorElement>("[data-social]").forEach((element) => {
+      const field = element.dataset.social;
+      const value = field ? settings[field] : undefined;
+
+      if (value) {
+        element.href = value;
+      } else {
+        element.classList.add("d-none");
+      }
+    });
+  }
+
+  function renderMenus(menus: Menu[], number?: string | null) {
+    const grid = document.querySelector<HTMLElement>("[data-menu-grid]");
+    const filters = document.querySelector<HTMLElement>("[data-menu-filters]");
+
+    if (!grid || !Array.isArray(menus)) {
+      return;
+    }
+
+    if (menus.length === 0) {
+      grid.innerHTML = `
+        <div class="col-12">
+          <div class="bg-white border rounded-4 p-5 text-center text-secondary">
+            Belum ada menu yang ditampilkan.
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = menus
+      .map((menu) => {
+        const message = `Halo, Saya ingin memesan ${menu.name}`;
+
+        return `
+          <div class="col-md-6 col-lg-4 menu-item" data-category="${escapeHtml(menu.category)}">
+            <article class="card menu-card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+              <img
+                src="${escapeHtml(assetUrl(menu.image) || "/images/nasi-box.jpg")}"
+                alt="${escapeHtml(menu.name)}"
+                class="card-img-top"
+                loading="lazy"
+              />
+              <div class="card-body d-flex flex-column p-4">
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                  <span class="badge bg-success-subtle text-success-emphasis">${escapeHtml(menu.category)}</span>
+                  ${menu.popular ? '<span class="badge bg-warning-subtle text-warning-emphasis">Favorit</span>' : ""}
+                </div>
+                <h3 class="h5 fw-bold mb-2">${escapeHtml(menu.name)}</h3>
+                <p class="small text-secondary">${escapeHtml(menu.description || "")}</p>
+                <div class="mt-auto d-flex align-items-center justify-content-between gap-3 pt-3 border-top">
+                  <strong class="fs-5 text-success">${formatRupiah(menu.price)}</strong>
+                  <a
+                    href="${whatsappLink(message, number)}"
+                    class="btn btn-success btn-sm rounded-pill px-3"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >Pesan</a>
+                </div>
+              </div>
+            </article>
+          </div>
+        `;
+      })
+      .join("");
+
+    if (filters) {
+      const categories = ["Semua", ...new Set(menus.map((menu) => menu.category))];
+
+      filters.innerHTML = categories
+        .map(
+          (category) => `
+            <button
+              class="btn btn-sm rounded-pill px-3 filter-btn ${category === "Semua" ? "btn-success" : "btn-outline-success"}"
+              data-category="${escapeHtml(category)}"
+              aria-pressed="${category === "Semua" ? "true" : "false"}"
+            >${escapeHtml(category)}</button>
+          `
+        )
+        .join("");
+
+      filters.addEventListener("click", (event) => {
+        const target = event.target as HTMLElement;
+        const button = target.closest<HTMLButtonElement>(".filter-btn");
+
+        if (!button) {
+          return;
+        }
+
+        const selected = button.dataset.category;
+
+        filters.querySelectorAll<HTMLElement>(".filter-btn").forEach((item) => {
+          const active = item === button;
+          item.classList.toggle("btn-success", active);
+          item.classList.toggle("btn-outline-success", !active);
+          item.setAttribute("aria-pressed", String(active));
+        });
+
+        grid.querySelectorAll<HTMLElement>(".menu-item").forEach((item) => {
+          item.hidden =
+            selected !== "Semua" && item.dataset.category !== selected;
+        });
+      });
+    }
+  }
+
+  function renderGallery(items: GalleryItem[]) {
+    const grid = document.querySelector<HTMLElement>("[data-gallery-grid]");
+
+    if (!grid || !Array.isArray(items) || items.length === 0) {
+      return;
+    }
+
+    grid.innerHTML = items
+      .map(
+        (item) => `
+          <div class="col-6 col-md-4">
+            <button
+              class="gallery-thumb"
+              data-image="${escapeHtml(assetUrl(item.image))}"
+              data-alt="${escapeHtml(item.title)}"
+              aria-label="Lihat ${escapeHtml(item.title)}"
+            >
+              <img src="${escapeHtml(assetUrl(item.image))}" alt="${escapeHtml(item.title)}" loading="lazy" />
+              <span class="gallery-thumb-overlay">Perbesar</span>
+            </button>
+          </div>
+        `
+      )
+      .join("");
+  }
+
+  function renderTestimonials(items: Testimonial[]) {
+    const grid = document.querySelector<HTMLElement>("[data-testimonial-grid]");
+
+    if (!grid || !Array.isArray(items)) {
+      return;
+    }
+
+    if (items.length === 0) {
+      return;
+    }
+
+    grid.innerHTML = items
+      .map((item) => {
+        const rating = Number(item.rating) || 0;
+        const stars = `${"★".repeat(rating)}${"☆".repeat(Math.max(0, 5 - rating))}`;
+
+        return `
+          <div class="col-md-6 col-lg-4">
+            <article class="card h-100 border-0 shadow-sm rounded-4">
+              <div class="card-body p-4 text-center d-flex flex-column">
+                <div class="testimonial-stars fs-5 mb-3">${stars}</div>
+                <p class="fst-italic text-secondary">"${escapeHtml(item.message)}"</p>
+                <div class="mt-auto pt-2">
+                  <h3 class="h6 fw-bold mb-0">${escapeHtml(item.name)}</h3>
+                  <span class="small text-secondary">${escapeHtml(item.role || "Pelanggan")}</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  (async () => {
+    const results = await Promise.allSettled([
+      getJson<Settings>("/api/settings"),
+      getJson<Menu[]>("/api/menus"),
+      getJson<Testimonial[]>("/api/testimonials"),
+      getJson<GalleryItem[]>("/api/gallery")
+    ]);
+
+    if (results[0].status === "fulfilled") {
+      applySettings(results[0].value.data);
+    }
+
+    if (results[1].status === "fulfilled") {
+      const number =
+        results[0].status === "fulfilled" ? results[0].value.data.whatsapp : defaultWhatsApp;
+
+      renderMenus(results[1].value.data, number);
+    }
+
+    if (results[2].status === "fulfilled") {
+      renderTestimonials(results[2].value.data);
+    }
+
+    if (results[3].status === "fulfilled") {
+      renderGallery(results[3].value.data);
+    }
+  })();
+</script>

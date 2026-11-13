@@ -1,0 +1,342 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { Plus } from "@lucide/astro";
+---
+
+<AdminLayout
+  title="Menu"
+  subtitle="Kelola daftar menu yang tampil di website"
+  active="menus"
+>
+  <div class="admin-page-head">
+    <div>
+      <h2>Daftar Menu</h2>
+      <p>Ubah harga, foto, kategori, dan status tampil menu.</p>
+    </div>
+
+    <div class="admin-actions">
+      <button class="btn btn-primary" type="button" data-add-menu>
+        <Plus size={17} /> Tambah Menu
+      </button>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Menu</th>
+            <th>Kategori</th>
+            <th>Harga</th>
+            <th>Status</th>
+            <th aria-label="Aksi"></th>
+          </tr>
+        </thead>
+        <tbody data-menu-rows>
+          <tr>
+            <td colspan="5">
+              <div class="admin-loading">Memuat menu...</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <dialog class="admin-dialog" data-menu-dialog>
+    <form data-menu-form>
+      <div class="dialog-header">
+        <h3 data-dialog-title>Tambah Menu</h3>
+        <button class="dialog-close" type="button" data-dialog-close aria-label="Tutup">
+          &times;
+        </button>
+      </div>
+
+      <div class="dialog-body">
+        <div class="form-grid">
+          <div class="form-field full">
+            <label for="menu-image">Foto menu</label>
+            <img class="image-preview" data-image-preview alt="Pratinjau foto" hidden />
+            <input id="menu-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" />
+            <small>Format JPG, PNG, atau WEBP. Maksimal 5MB.</small>
+          </div>
+
+          <div class="form-field">
+            <label for="menu-name">Nama menu</label>
+            <input id="menu-name" name="name" type="text" required placeholder="Contoh: Nasi Box Ayam Bakar" />
+          </div>
+
+          <div class="form-field">
+            <label for="menu-category">Kategori</label>
+            <input
+              id="menu-category"
+              name="category"
+              type="text"
+              list="menu-categories"
+              required
+              placeholder="Contoh: Nasi Box"
+            />
+            <datalist id="menu-categories">
+              <option value="Nasi Box"></option>
+              <option value="Prasmanan"></option>
+              <option value="Acara"></option>
+            </datalist>
+          </div>
+
+          <div class="form-field">
+            <label for="menu-price">Harga (Rp)</label>
+            <input id="menu-price" name="price" type="number" min="0" step="500" required placeholder="15000" />
+          </div>
+
+          <div class="form-field">
+            <label>Label &amp; status</label>
+            <label class="checkbox-field">
+              <input name="popular" type="checkbox" data-popular />
+              Tampilkan sebagai menu favorit
+            </label>
+          </div>
+
+          <div class="form-field full">
+            <label for="menu-description">Deskripsi</label>
+            <textarea
+              id="menu-description"
+              name="description"
+              placeholder="Tuliskan deskripsi singkat menu"
+            ></textarea>
+          </div>
+
+          <div class="form-field full">
+            <label class="checkbox-field">
+              <input name="is_active" type="checkbox" data-active checked />
+              Tampilkan menu ini di website
+            </label>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-secondary" type="button" data-dialog-close>Batal</button>
+          <button class="btn btn-primary" type="submit" data-submit>Simpan Menu</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+</AdminLayout>
+
+<script>
+  import {
+    api,
+    assetUrl,
+    errorMessage,
+    escapeHtml,
+    formatRupiah,
+    showToast,
+    setLoading
+  } from "../../lib/admin-api.js";
+
+  type Menu = {
+    id: number;
+    name: string;
+    category: string;
+    price: number;
+    description: string | null;
+    image: string | null;
+    popular: boolean;
+    is_active: boolean;
+  };
+
+  const rows = document.querySelector<HTMLElement>("[data-menu-rows]")!;
+  const dialog = document.querySelector<HTMLDialogElement>("[data-menu-dialog]")!;
+  const form = document.querySelector<HTMLFormElement>("[data-menu-form]")!;
+  const dialogTitle = document.querySelector<HTMLElement>("[data-dialog-title]")!;
+  const imageInput = document.querySelector<HTMLInputElement>("#menu-image")!;
+  const imagePreview = document.querySelector<HTMLImageElement>("[data-image-preview]")!;
+  const popularInput = document.querySelector<HTMLInputElement>("[data-popular]")!;
+  const activeInput = document.querySelector<HTMLInputElement>("[data-active]")!;
+  const submitButton = document.querySelector<HTMLButtonElement>("[data-submit]")!;
+  let menuList: Menu[] = [];
+
+  function getField(name: string) {
+    return form.elements.namedItem(name) as
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | HTMLSelectElement;
+  }
+
+  function previewFile(file?: File) {
+    if (!file) {
+      return;
+    }
+
+    imagePreview.src = URL.createObjectURL(file);
+    imagePreview.hidden = false;
+  }
+
+  function openCreate() {
+    form.reset();
+    form.dataset.id = "";
+    dialogTitle.textContent = "Tambah Menu";
+    activeInput.checked = true;
+    popularInput.checked = false;
+    imagePreview.hidden = true;
+    imagePreview.removeAttribute("src");
+    dialog.showModal();
+  }
+
+  function openEdit(menu: Menu) {
+    form.reset();
+    form.dataset.id = String(menu.id);
+    dialogTitle.textContent = "Edit Menu";
+    getField("name").value = menu.name;
+    getField("category").value = menu.category;
+    getField("price").value = String(menu.price);
+    getField("description").value = menu.description || "";
+    popularInput.checked = Boolean(menu.popular);
+    activeInput.checked = Boolean(menu.is_active);
+
+    if (menu.image) {
+      imagePreview.src = assetUrl(menu.image);
+      imagePreview.hidden = false;
+    } else {
+      imagePreview.hidden = true;
+      imagePreview.removeAttribute("src");
+    }
+
+    dialog.showModal();
+  }
+
+  function renderMenus() {
+    if (menuList.length === 0) {
+      rows.innerHTML = `
+        <tr>
+          <td colspan="5">
+            <div class="empty-state">
+              <strong>Belum ada menu</strong>
+              <span>Klik tombol Tambah Menu untuk membuat menu pertama.</span>
+            </div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    rows.innerHTML = menuList
+      .map(
+        (menu) => `
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <img class="table-thumb" src="${escapeHtml(assetUrl(menu.image))}" alt="${escapeHtml(menu.name)}" />
+                <div>
+                  <span class="table-title">${escapeHtml(menu.name)}</span>
+                  <span class="table-meta">${escapeHtml(menu.description || "-")}</span>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge">${escapeHtml(menu.category)}</span></td>
+            <td>${formatRupiah(menu.price)}</td>
+            <td>
+              <span class="badge ${menu.is_active ? "badge-success" : "badge-muted"}">
+                ${menu.is_active ? "Aktif" : "Nonaktif"}
+              </span>
+              ${menu.popular ? '<span class="badge badge-warning">Favorit</span>' : ""}
+            </td>
+            <td>
+              <div class="table-actions">
+                <button class="btn btn-secondary btn-sm" type="button" data-edit="${menu.id}">Edit</button>
+                <button class="btn btn-danger btn-sm" type="button" data-delete="${menu.id}">Hapus</button>
+              </div>
+            </td>
+          </tr>
+        `
+      )
+      .join("");
+  }
+
+  async function loadMenus() {
+    try {
+      const response = await api("/api/menus?all=1");
+      menuList = response.data || [];
+      renderMenus();
+    } catch (error) {
+      showToast(errorMessage(error), "error");
+    }
+  }
+
+  document.querySelector("[data-add-menu]")?.addEventListener("click", openCreate);
+
+  document.querySelectorAll("[data-dialog-close]").forEach((button) => {
+    button.addEventListener("click", () => dialog.close());
+  });
+
+  imageInput.addEventListener("change", () => {
+    previewFile(imageInput.files?.[0]);
+  });
+
+  rows.addEventListener("click", async (event) => {
+    const target = event.target as HTMLElement;
+    const editButton = target.closest<HTMLButtonElement>("[data-edit]");
+    const deleteButton = target.closest<HTMLButtonElement>("[data-delete]");
+
+    if (editButton) {
+      const menu = menuList.find((item) => String(item.id) === editButton.dataset.edit);
+
+      if (menu) {
+        openEdit(menu);
+      }
+    }
+
+    if (deleteButton) {
+      const menu = menuList.find((item) => String(item.id) === deleteButton.dataset.delete);
+
+      if (!menu) {
+        return;
+      }
+
+      if (!window.confirm(`Hapus menu "${menu.name}"?`)) {
+        return;
+      }
+
+      try {
+        await api(`/api/menus/${menu.id}`, { method: "DELETE" });
+        showToast("Menu berhasil dihapus");
+        await loadMenus();
+      } catch (error) {
+        showToast(errorMessage(error), "error");
+      }
+    }
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    const id = form.dataset.id;
+    const imageEntry = formData.get("image");
+
+    formData.set("popular", popularInput.checked ? "true" : "false");
+    formData.set("is_active", activeInput.checked ? "true" : "false");
+
+    if (!(imageEntry instanceof File) || imageEntry.size === 0) {
+      formData.delete("image");
+    }
+
+    setLoading(submitButton, true);
+
+    try {
+      await api(id ? `/api/menus/${id}` : "/api/menus", {
+        method: id ? "PUT" : "POST",
+        body: formData
+      });
+
+      showToast(id ? "Menu berhasil diperbarui" : "Menu berhasil ditambahkan");
+      dialog.close();
+      await loadMenus();
+    } catch (error) {
+      showToast(errorMessage(error), "error");
+    } finally {
+      setLoading(submitButton, false);
+    }
+  });
+
+  loadMenus();
+</script>
